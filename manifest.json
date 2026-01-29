@@ -1,0 +1,12 @@
+{
+    "manifest_version": 1,
+    "id": "instead",
+    "display_name": "inSTead",
+    "description": "Adds a feedback icon to character messages that allows users to provide editorial feedback and get revised responses.",
+    "version": "1.0.0",
+    "author": "ActualBroeckchen",
+    "requires": [],
+    "js": "index.js",
+    "css": "style.css",
+    "auto_update": false
+}
