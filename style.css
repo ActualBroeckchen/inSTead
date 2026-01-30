@@ -13,19 +13,26 @@
     opacity: 1;
 }
 
-/* Popup overlay */
+/* Popup overlay - uses dvh for dynamic viewport height (accounts for mobile browser chrome) */
 .instead-popup-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: 100vw;
+    width: 100dvw;
+    height: 100vh;
+    height: 100dvh;
     background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(calc(var(--SmartThemeBlurStrength, 10px) * 2));
+    -webkit-backdrop-filter: blur(calc(var(--SmartThemeBlurStrength, 10px) * 2));
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     z-index: 9999;
     animation: fadeIn 0.2s ease;
+    overflow-y: auto;
+    padding: max(env(safe-area-inset-top, 10px), 10px) max(env(safe-area-inset-right, 10px), 10px) max(env(safe-area-inset-bottom, 10px), 10px) max(env(safe-area-inset-left, 10px), 10px);
+    box-sizing: border-box;
 }
 
 @keyframes fadeIn {
@@ -37,18 +44,21 @@
     }
 }
 
-/* Popup container */
+/* Popup container - responsive sizing with dynamic viewport units */
 .instead-popup-container {
     background-color: var(--SmartThemeBlurTintColor, #1a1a1a);
     border: 1px solid var(--SmartThemeBorderColor, #555);
     border-radius: 10px;
-    max-width: 600px;
-    width: 90%;
-    max-height: 80vh;
+    width: min(600px, calc(100vw - 20px));
+    width: min(600px, calc(100dvw - 20px));
+    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px);
+    margin: auto;
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     animation: slideIn 0.3s ease;
+    overflow: hidden;
 }
 
 @keyframes slideIn {
@@ -62,51 +72,56 @@
     }
 }
 
-/* Popup header */
+/* Popup header - compact for mobile */
 .instead-popup-header {
-    padding: 20px;
+    padding: 12px 15px;
     border-bottom: 1px solid var(--SmartThemeBorderColor, #555);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .instead-popup-header h3 {
     margin: 0;
-    font-size: 1.2em;
+    font-size: 1em;
     color: var(--SmartThemeBodyColor, #e0e0e0);
+    line-height: 1.3;
 }
 
 .instead-popup-close {
     background: none;
     border: none;
     color: var(--SmartThemeBodyColor, #e0e0e0);
-    font-size: 1.8em;
+    font-size: 1.5em;
     cursor: pointer;
-    padding: 0;
-    width: 30px;
-    height: 30px;
+    padding: 5px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0.7;
     transition: opacity 0.2s ease;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .instead-popup-close:hover {
     opacity: 1;
 }
 
-/* Popup body */
+/* Popup body - scrollable content area */
 .instead-popup-body {
-    padding: 20px;
+    padding: 12px 15px;
     overflow-y: auto;
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0; /* Important for flex overflow scrolling */
 }
 
 .instead-original-message {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     padding: 10px;
     background-color: rgba(255, 255, 255, 0.05);
     border-radius: 5px;
@@ -115,32 +130,37 @@
 
 .instead-original-message strong {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: var(--SmartThemeQuoteColor, #4a9eff);
+    font-size: 0.9em;
 }
 
 .instead-message-preview {
-    max-height: 150px;
+    max-height: 100px;
     overflow-y: auto;
     color: var(--SmartThemeBodyColor, #e0e0e0);
     opacity: 0.8;
-    font-size: 0.95em;
+    font-size: 0.9em;
     line-height: 1.4;
     padding: 5px;
 }
 
+/* Textarea - responsive with proper sizing */
 .instead-feedback-input {
     width: 100%;
-    min-height: 120px;
-    padding: 12px;
+    min-height: 80px;
+    max-height: 40vh;
+    max-height: 40dvh;
+    padding: 10px;
     background-color: var(--black30a, rgba(0, 0, 0, 0.3));
     border: 1px solid var(--SmartThemeBorderColor, #555);
     border-radius: 5px;
     color: var(--SmartThemeBodyColor, #e0e0e0);
     font-family: inherit;
-    font-size: 1em;
+    font-size: 16px; /* Prevents iOS zoom on focus */
     resize: vertical;
     transition: border-color 0.2s ease;
+    box-sizing: border-box;
 }
 
 .instead-feedback-input:focus {
@@ -152,22 +172,28 @@
     color: var(--white50a, rgba(255, 255, 255, 0.5));
 }
 
-/* Popup footer */
+/* Popup footer - responsive buttons */
 .instead-popup-footer {
-    padding: 15px 20px;
+    padding: 12px 15px;
     border-top: 1px solid var(--SmartThemeBorderColor, #555);
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
 }
 
 .instead-cancel-btn,
 .instead-send-btn {
-    padding: 8px 20px;
+    padding: 10px 16px;
     border-radius: 5px;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 1em;
+    font-size: 0.95em;
+    min-height: 44px; /* Touch-friendly minimum size */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .instead-cancel-btn {
@@ -180,39 +206,97 @@
 }
 
 .instead-send-btn {
-    background-color: var(--SmartThemeQuoteColor, #4a9eff);
-    border: 1px solid var(--SmartThemeQuoteColor, #4a9eff);
+    background-color: var(--crimson70a, rgba(136, 40, 44, 0.7));
+    border: 1px solid var(--crimson70a, rgba(136, 40, 44, 0.7));
     color: white;
-    display: flex;
-    align-items: center;
     gap: 8px;
 }
 
 .instead-send-btn:hover {
-    background-color: var(--SmartThemeQuoteColor, #3a8eef);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(74, 158, 255, 0.3);
+    background-color: var(--crimson-hover, #9e3a3f);
 }
 
 .instead-send-btn i {
     font-size: 0.9em;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-    .instead-popup-container {
-        width: 95%;
-        max-height: 90vh;
+/* Mobile-first responsive adjustments */
+@media screen and (max-width: 768px) {
+    .instead-popup-overlay {
+        padding: 5px;
+        padding-top: max(env(safe-area-inset-top, 5px), 5px);
+        padding-bottom: max(env(safe-area-inset-bottom, 5px), 5px);
     }
     
-    .instead-popup-header,
-    .instead-popup-body,
-    .instead-popup-footer {
-        padding: 15px;
+    .instead-popup-container {
+        width: calc(100vw - 10px);
+        width: calc(100dvw - 10px);
+        max-height: calc(100vh - 10px);
+        max-height: calc(100dvh - 10px);
+        border-radius: 8px;
+    }
+    
+    .instead-popup-header {
+        padding: 10px 12px;
     }
     
     .instead-popup-header h3 {
-        font-size: 1.1em;
+        font-size: 0.95em;
+    }
+    
+    .instead-popup-body {
+        padding: 10px 12px;
+    }
+    
+    .instead-message-preview {
+        max-height: 80px;
+        font-size: 0.85em;
+    }
+    
+    .instead-feedback-input {
+        min-height: 60px;
+        font-size: 16px; /* Prevents iOS zoom */
+    }
+    
+    .instead-popup-footer {
+        padding: 10px 12px;
+    }
+    
+    .instead-cancel-btn,
+    .instead-send-btn {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
+/* Handle keyboard appearance on mobile */
+@media screen and (max-height: 500px) {
+    .instead-popup-overlay {
+        align-items: flex-start;
+    }
+    
+    .instead-popup-container {
+        margin-top: 5px;
+    }
+    
+    .instead-message-preview {
+        max-height: 50px;
+    }
+    
+    .instead-original-message {
+        margin-bottom: 8px;
+        padding: 8px;
+    }
+}
+
+/* Very small screens (like when keyboard is open) */
+@media screen and (max-height: 400px) {
+    .instead-original-message {
+        display: none; /* Hide original message preview when space is very limited */
+    }
+    
+    .instead-feedback-input {
+        min-height: 50px;
     }
 }
 
@@ -246,4 +330,11 @@ body.theme-light .instead-feedback-input {
 
 body.theme-light .instead-feedback-input::placeholder {
     color: rgba(0, 0, 0, 0.5);
+}
+
+/* PWA safe area support */
+body.PWA .instead-popup-overlay {
+    padding-right: max(env(safe-area-inset-right), 10px);
+    padding-left: max(env(safe-area-inset-left), 10px);
+    padding-bottom: max(env(safe-area-inset-bottom), 15px);
 }
