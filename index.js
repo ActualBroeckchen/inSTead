@@ -7,7 +7,7 @@
 // So we need to go up 4 levels to reach /scripts/ for script.js
 // And 3 levels up to reach /scripts/ then extensions.js for extensions.js
 import { getContext, extension_settings } from '../../../extensions.js';
-import { eventSource, event_types, saveChatConditional, reloadCurrentChat, saveSettingsDebounced } from '../../../../script.js';
+import { eventSource, event_types, saveChatConditional, reloadCurrentChat, saveSettingsDebounced, generateQuietPrompt } from '../../../../script.js';
 
 const EXTENSION_NAME = 'inSTead';
 
@@ -195,47 +195,64 @@ async function processRevisionRequest(messageId, feedback) {
     isProcessing = true;
     const context = getContext();
     const chat = context.chat;
-    const originalMessage = chat[messageId];
+    const message = chat[messageId];
 
     try {
         toastr.info('Generating revision with your feedback...');
 
-        // Build the custom prompt
-        const revisedPrompt = await buildRevisionPrompt(messageId, feedback, originalMessage);
+        // Build a focused revision prompt
+        // generateQuietPrompt already includes chat context, so we just need the instruction
+        const revisionPrompt = buildRevisionPrompt(feedback, message);
 
-        // Temporarily remove the last character message from chat
-        const messagesToKeep = chat.slice(0, messageId);
-        
-        // Store original chat
-        const originalChat = [...chat];
-        
-        // Truncate chat to exclude the message we're revising
-        context.chat = messagesToKeep;
-
-        // Send the revision request
-        const result = await generateRevision(revisedPrompt);
-
-        // Restore the full chat
-        context.chat = originalChat;
+        // Send the revision request using ST's generation system
+        const result = await generateRevision(revisionPrompt);
 
         if (result && result.trim()) {
-            // Replace the original message with the revision
-            chat[messageId].mes = result;
-            chat[messageId].gen_started = new Date();
-            chat[messageId].gen_finished = new Date();
+            const revisedText = result.trim();
             
-            // Mark as edited
-            if (!chat[messageId].extra) {
-                chat[messageId].extra = {};
+            // Initialize swipes array if it doesn't exist
+            if (!Array.isArray(message.swipes)) {
+                message.swipes = [message.mes];
+                message.swipe_info = [{}];
+                message.swipe_id = 0;
             }
-            chat[messageId].extra.instead_revised = true;
-            chat[messageId].extra.instead_feedback = feedback;
+            
+            // Ensure swipe_info array exists
+            if (!Array.isArray(message.swipe_info)) {
+                message.swipe_info = message.swipes.map(() => ({}));
+            }
+            
+            // Add the revision as a new swipe
+            message.swipes.push(revisedText);
+            message.swipe_info.push({
+                send_date: new Date().toISOString(),
+                gen_started: new Date().toISOString(),
+                gen_finished: new Date().toISOString(),
+                extra: {
+                    api: 'inSTead',
+                    model: 'revision',
+                    instead_revised: true,
+                    instead_feedback: feedback,
+                },
+            });
+            
+            // Switch to the new swipe
+            const newSwipeId = message.swipes.length - 1;
+            message.swipe_id = newSwipeId;
+            message.mes = revisedText;
+            
+            // Update extra to mark as revised
+            if (!message.extra) {
+                message.extra = {};
+            }
+            message.extra.instead_revised = true;
+            message.extra.instead_feedback = feedback;
 
             // Save and re-render
             await saveChatConditional();
             await reloadCurrentChat();
 
-            toastr.success('Message revised successfully!');
+            toastr.success('Revision added as new swipe! Swipe left to see the original.');
         } else {
             toastr.error('Failed to generate revision.');
         }
@@ -247,81 +264,38 @@ async function processRevisionRequest(messageId, feedback) {
         isProcessing = false;
     }
 }
-
 /**
- * Build the revision prompt
+ * Build the revision prompt - a focused instruction for the AI
+ * The generateQuietPrompt function already includes chat context,
+ * so we just need to provide the revision-specific instruction
  */
-async function buildRevisionPrompt(messageId, feedback, originalMessage) {
-    const context = getContext();
-    
-    // Get the normal prompt up to (but not including) the message being revised
-    const promptParts = [];
-    
-    // Add system prompt / character definition
-    if (context.systemPrompt) {
-        promptParts.push(context.systemPrompt);
-    }
-    
-    // Add character card
-    if (context.characterId) {
-        const character = context.characters[context.characterId];
-        if (character && character.description) {
-            promptParts.push(character.description);
-        }
-    }
+function buildRevisionPrompt(feedback, originalMessage) {
+    // Create a focused revision instruction
+    const revisionPrompt = `[Editorial Revision Request]
 
-    // Add persona
-    if (context.persona) {
-        promptParts.push(`[Your character: ${context.name1}]\n${context.persona}`);
-    }
+The previous response was:
+---
+${originalMessage.mes}
+---
 
-    // Add message history (excluding the message being revised)
-    const chat = context.chat;
-    for (let i = 0; i < messageId; i++) {
-        const msg = chat[i];
-        const name = msg.is_user ? context.name1 : context.name2;
-        promptParts.push(`${name}: ${msg.mes}`);
-    }
+The user has provided the following editorial feedback: "${feedback}"
 
-    // Add the revision-specific instructions
-    promptParts.push('\n---\n');
-    promptParts.push('Your first suggestion for continuing this story was the following:\n');
-    promptParts.push('<<<BEGIN ORIGINAL SUGGESTION>>>');
-    promptParts.push(originalMessage.mes);
-    promptParts.push('<<<END ORIGINAL SUGGESTION>>>');
-    promptParts.push('\n');
-    promptParts.push(`The user has reviewed your suggestion and given the following feedback: "${feedback}". Revise according to this editorial input.`);
+Please write a revised version of the response that addresses this feedback while maintaining consistency with the conversation. Write only the revised response, without any meta-commentary.`;
 
-    return promptParts.join('\n');
+    return revisionPrompt;
 }
 
 /**
- * Generate revision using the AI
+ * Generate revision using SillyTavern's generation API
  */
-async function generateRevision(prompt) {
-    const context = getContext();
-    
-    // Use SillyTavern's generation API
-    const response = await fetch('/api/backends/chat-completion/generate', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            prompt: prompt,
-            use_mancer: false,
-            use_openrouter: false,
-            max_length: context.amount_gen || 300,
-            temperature: context.temp || 0.7,
-        }),
+async function generateRevision(revisionPrompt) {
+    // Use SillyTavern's generateQuietPrompt which properly integrates with all backends
+    const result = await generateQuietPrompt({
+        quietPrompt: revisionPrompt,
+        quietToLoud: false,  // Don't add to chat
     });
-
-    if (!response.ok) {
-        throw new Error(`Generation failed: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.response || data.text || '';
+    
+    return result || '';
 }
 
 /**
