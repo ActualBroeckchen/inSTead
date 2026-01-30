@@ -3,8 +3,11 @@
  * Adds editorial feedback capability to character messages
  */
 
-import { getContext, extension_settings, saveSettingsDebounced } from '../../../extensions.js';
-import { eventSource, event_types, saveChatConditional, reloadCurrentChat } from '../../../../script.js';
+// Third-party extensions are at /scripts/extensions/third-party/[name]/
+// So we need to go up 4 levels to reach /scripts/ for script.js
+// And 3 levels up to reach /scripts/ then extensions.js for extensions.js
+import { getContext, extension_settings } from '../../../extensions.js';
+import { eventSource, event_types, saveChatConditional, reloadCurrentChat, saveSettingsDebounced } from '../../../../script.js';
 
 const EXTENSION_NAME = 'inSTead';
 
@@ -14,41 +17,61 @@ let isProcessing = false;
  * Add feedback icon to a specific message
  */
 function addFeedbackIconToMessage(messageId) {
-    const context = getContext();
-    const chat = context.chat;
-    if (!chat || messageId >= chat.length) return;
+    try {
+        const context = getContext();
+        const chat = context.chat;
+        if (!chat || messageId >= chat.length) {
+            return;
+        }
 
-    const message = chat[messageId];
-    
-    // Only add to character messages (not user messages)
-    if (message.is_user) return;
+        const message = chat[messageId];
+        
+        // Only add to character messages (not user messages)
+        if (message.is_user) {
+            return;
+        }
 
-    const messageElement = document.querySelector(`.mes[mesid="${messageId}"]`);
-    if (!messageElement) return;
+        const messageElement = document.querySelector(`.mes[mesid="${messageId}"]`);
+        if (!messageElement) {
+            return;
+        }
 
-    // Check if icon already exists
-    if (messageElement.querySelector('.instead-feedback-icon')) return;
+        // Check if icon already exists
+        if (messageElement.querySelector('.instead-feedback-icon')) {
+            return;
+        }
 
-    // Find the extra message buttons container (the dropdown menu)
-    const extraButtonsContainer = messageElement.querySelector('.extraMesButtons');
-    if (!extraButtonsContainer) return;
+        // Find the message buttons container - try extraMesButtons first, then mes_buttons
+        let buttonsContainer = messageElement.querySelector('.extraMesButtons');
+        if (!buttonsContainer) {
+            buttonsContainer = messageElement.querySelector('.mes_buttons');
+        }
+        if (!buttonsContainer) {
+            console.debug(`[${EXTENSION_NAME}] No buttons container found for message ${messageId}`);
+            return;
+        }
 
-    // Create feedback icon button
-    const feedbackButton = document.createElement('div');
-    feedbackButton.className = 'mes_button instead-feedback-icon interactable';
-    feedbackButton.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i>`;
-    feedbackButton.title = 'Request revision with feedback';
-    feedbackButton.setAttribute('data-mesid', messageId);
-    feedbackButton.tabIndex = 0;
+        // Create feedback icon button
+        const feedbackButton = document.createElement('div');
+        feedbackButton.className = 'mes_button instead-feedback-icon interactable';
+        feedbackButton.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i>';
+        feedbackButton.title = 'Request revision with feedback';
+        feedbackButton.setAttribute('data-mesid', messageId);
+        feedbackButton.tabIndex = 0;
 
-    // Insert the button into the extra buttons menu
-    extraButtonsContainer.insertBefore(feedbackButton, extraButtonsContainer.firstChild);
+        // Insert the button at the beginning
+        buttonsContainer.insertBefore(feedbackButton, buttonsContainer.firstChild);
+        console.debug(`[${EXTENSION_NAME}] Added feedback button to message ${messageId}`);
+    } catch (error) {
+        console.error(`[${EXTENSION_NAME}] Error adding feedback icon to message ${messageId}:`, error);
+    }
 }
 
 /**
  * Add feedback icons to all character messages
  */
 function addFeedbackIconsToMessages() {
+    console.debug(`[${EXTENSION_NAME}] Adding feedback icons to all messages...`);
     const messages = document.querySelectorAll('.mes');
     messages.forEach((messageElement) => {
         const messageId = messageElement.getAttribute('mesid');
@@ -165,7 +188,6 @@ async function processRevisionRequest(messageId, feedback) {
 
         // Temporarily remove the last character message from chat
         const messagesToKeep = chat.slice(0, messageId);
-        const removedMessages = chat.slice(messageId);
         
         // Store original chat
         const originalChat = [...chat];
@@ -272,10 +294,8 @@ async function generateRevision(prompt) {
             prompt: prompt,
             use_mancer: false,
             use_openrouter: false,
-            // Add other necessary generation parameters from context
             max_length: context.amount_gen || 300,
             temperature: context.temp || 0.7,
-            // ... other settings as needed
         }),
     });
 
@@ -325,24 +345,30 @@ function onFeedbackIconClick(event) {
 jQuery(async () => {
     console.log(`[${EXTENSION_NAME}] Initializing...`);
     
-    loadSettings();
-    
-    // Use event delegation for click handling (works even if button added later)
-    $(document).on('click', '.instead-feedback-icon', onFeedbackIconClick);
-    
-    // Add icons to existing messages
-    addFeedbackIconsToMessages();
-    
-    // Listen for new character messages being rendered
-    eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, (messageId) => {
-        addFeedbackIconToMessage(messageId);
-    });
-    
-    // Also listen for chat changes to re-add icons
-    eventSource.on(event_types.CHAT_CHANGED, () => {
-        // Small delay to ensure DOM is updated
-        setTimeout(addFeedbackIconsToMessages, 100);
-    });
-    
-    console.log(`[${EXTENSION_NAME}] Initialized successfully`);
+    try {
+        loadSettings();
+        
+        // Use event delegation for click handling (works even if button added later)
+        $(document).on('click', '.instead-feedback-icon', onFeedbackIconClick);
+        
+        // Add icons to existing messages
+        addFeedbackIconsToMessages();
+        
+        // Listen for new character messages being rendered
+        eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, (messageId) => {
+            console.debug(`[${EXTENSION_NAME}] CHARACTER_MESSAGE_RENDERED event for message ${messageId}`);
+            addFeedbackIconToMessage(messageId);
+        });
+        
+        // Also listen for chat changes to re-add icons
+        eventSource.on(event_types.CHAT_CHANGED, () => {
+            console.debug(`[${EXTENSION_NAME}] CHAT_CHANGED event`);
+            // Small delay to ensure DOM is updated
+            setTimeout(addFeedbackIconsToMessages, 100);
+        });
+        
+        console.log(`[${EXTENSION_NAME}] Initialized successfully`);
+    } catch (error) {
+        console.error(`[${EXTENSION_NAME}] Failed to initialize:`, error);
+    }
 });
