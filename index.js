@@ -66,9 +66,9 @@
         // Check if icon already exists
         if (messageElement.querySelector('.instead-feedback-icon')) return;
 
-        // Find the message buttons container
-        const buttonsContainer = messageElement.querySelector('.mes_buttons');
-        if (!buttonsContainer) return;
+        // Find the extra message buttons container (the dropdown menu)
+        const extraButtonsContainer = messageElement.querySelector('.extraMesButtons');
+        if (!extraButtonsContainer) return;
 
         // Create feedback icon button
         const feedbackButton = document.createElement('div');
@@ -83,8 +83,8 @@
             showFeedbackPopup(messageId);
         });
 
-        // Insert the button (before the last button which is usually the menu)
-        buttonsContainer.insertBefore(feedbackButton, buttonsContainer.firstChild);
+        // Insert the button into the extra buttons menu
+        extraButtonsContainer.insertBefore(feedbackButton, extraButtonsContainer.firstChild);
     }
 
     /**
