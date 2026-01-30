@@ -1,16 +1,13 @@
 # inSTead
 
-A SillyTavern extension that adds editorial feedback capability to character messages. Get better responses by providing specific feedback and requesting revisions.
+A SillyTavern extension that adds editorial feedback capability to character messages. Get better responses by providing specific feedback and requesting revisions—without losing the original!
 
 ## Features
 
-- **Feedback Icon**: Adds a small pen icon to the message toolbar on all character messages
-- **Interactive Popup**: Click the icon to open a feedback dialog with the original message preview
-- **Smart Revision**: The extension sends a custom prompt to the LLM that includes:
-  - All normal context (character definition, persona, message history)
-  - The original message marked as "your first suggestion"
-  - Your editorial feedback
-  - A request to revise according to your input
+- **Feedback Icon**: Adds a rotating arrows icon (🔄) to the extra message buttons menu (click the ⋯ button on any AI message)
+- **Interactive Popup**: Click the icon to open a mobile-friendly feedback dialog with the original message preview
+- **Non-Destructive Revisions**: Revisions are added as **swipes**, preserving the original message—swipe left to see it anytime
+- **Smart Revision**: The extension uses SillyTavern's generation system with your existing settings and context
 
 ## Installation
 
@@ -23,12 +20,12 @@ A SillyTavern extension that adds editorial feedback capability to character mes
 
 Alternatively, manually copy the extension files to your SillyTavern installation:
 ```
-SillyTavern/public/scripts/extensions/instead/
+SillyTavern/data/<user-handle>/extensions/third-party/inSTead/
 ```
 
 ## Usage
 
-1. **Find the Icon**: Look for the pen-to-square icon (📝) in the message toolbar of any character message (same row as the edit button and message menu)
+1. **Find the Icon**: Click the ⋯ (ellipsis) button on any AI message to open the extra buttons menu, then look for the rotating arrows icon (🔄)
 
 2. **Provide Feedback**: Click the icon to open the feedback dialog
    - Review the original message shown in the preview
@@ -37,56 +34,54 @@ SillyTavern/public/scripts/extensions/instead/
 
 3. **Send and Wait**: Click "Send" (or press Ctrl/Cmd + Enter)
    - The extension will generate a revised message based on your feedback
-   - The original message will be replaced with the revision
-   - A notification will confirm when the revision is complete
+   - The revision is added as a **new swipe**—the original is preserved!
+   - Swipe left to compare with the original, swipe right to return to the revision
 
 ## How It Works
 
 When you submit feedback, inSTead:
 
-1. Gathers the normal prompt context (character card, persona, chat history)
-2. **Excludes** the message you're revising from the chat history
-3. Adds a special section to the prompt:
-   ```
-   Your first suggestion for continuing this story was the following:
-   <<<BEGIN ORIGINAL SUGGESTION>>>
-   [original message]
-   <<<END ORIGINAL SUGGESTION>>>
-   
-   The user has reviewed your suggestion and given the following feedback: 
-   "[your feedback]". Revise according to this editorial input.
-   ```
-4. Sends this modified prompt to your configured LLM
-5. Replaces the original message with the LLM's revision
+1. Uses SillyTavern's `generateQuietPrompt` API (works with all backends)
+2. Sends a revision instruction that includes:
+   - The original message text
+   - Your editorial feedback
+   - A request to write a revised version
+3. Adds the generated revision as a new swipe on the message
+4. Automatically switches to display the revision
+
+The extension leverages your existing SillyTavern configuration—character card, chat context, and generation settings are all used automatically.
 
 ## Tips
 
 - **Be specific**: Instead of "make it better", try "add more sensory details" or "make the dialogue more natural"
 - **Use for any issue**: Grammar, tone, pacing, detail level, character consistency, etc.
-- **Iterate**: You can request revisions multiple times on the same message
-- **Works with all backends**: Compatible with any LLM backend you have configured in SillyTavern
+- **Iterate**: You can request multiple revisions—each becomes a new swipe you can compare
+- **Works with all backends**: Compatible with any LLM backend configured in SillyTavern (OpenAI, Claude, local models, etc.)
+- **Mobile-friendly**: The popup is fully responsive and works well on phones and tablets
 
 ## Technical Details
 
 - **Manifest Version**: 1
 - **Files**: 
   - `manifest.json` - Extension metadata
-  - `index.js` - Main functionality
-  - `style.css` - UI styling
+  - `index.js` - Main functionality (ES module)
+  - `style.css` - Responsive UI styling
 - **Dependencies**: None (uses SillyTavern's built-in APIs)
+- **API Used**: `generateQuietPrompt` for generation, standard swipe system for results
 - **Compatibility**: SillyTavern 1.10.0+
 
 ## Troubleshooting
 
 **Icon not appearing**: 
 - Make sure the extension is enabled in the Extensions menu
+- The icon appears in the extra buttons menu (click ⋯ on a message first)
 - Refresh the page (F5)
 - Check browser console for errors
 
 **Revision fails**:
-- Ensure your LLM backend is properly configured
+- Ensure your LLM backend is properly configured and connected
 - Check that you have an active connection to your AI service
-- Verify your API settings in SillyTavern
+- Look for error messages in the browser console (F12)
 
 **Popup doesn't open**:
 - Check for JavaScript errors in browser console
