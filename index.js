@@ -18,13 +18,21 @@ let isProcessing = false;
  */
 function addFeedbackIconToMessage(messageId) {
     try {
+        // Validate messageId
+        if (messageId === null || messageId === undefined || isNaN(messageId) || messageId < 0) {
+            return;
+        }
+
         const context = getContext();
         const chat = context.chat;
-        if (!chat || messageId >= chat.length) {
+        if (!chat || !Array.isArray(chat) || messageId >= chat.length) {
             return;
         }
 
         const message = chat[messageId];
+        if (!message) {
+            return;
+        }
         
         // Only add to character messages (not user messages)
         if (message.is_user) {
@@ -71,12 +79,21 @@ function addFeedbackIconToMessage(messageId) {
  * Add feedback icons to all character messages
  */
 function addFeedbackIconsToMessages() {
+    const context = getContext();
+    if (!context.chat || !Array.isArray(context.chat) || context.chat.length === 0) {
+        console.debug(`[${EXTENSION_NAME}] No chat loaded yet, skipping...`);
+        return;
+    }
+    
     console.debug(`[${EXTENSION_NAME}] Adding feedback icons to all messages...`);
     const messages = document.querySelectorAll('.mes');
     messages.forEach((messageElement) => {
-        const messageId = messageElement.getAttribute('mesid');
-        if (messageId !== null) {
-            addFeedbackIconToMessage(parseInt(messageId));
+        const mesidAttr = messageElement.getAttribute('mesid');
+        if (mesidAttr !== null && mesidAttr !== '') {
+            const messageId = parseInt(mesidAttr, 10);
+            if (!isNaN(messageId) && messageId >= 0) {
+                addFeedbackIconToMessage(messageId);
+            }
         }
     });
 }
