@@ -73,7 +73,7 @@
         // Create feedback icon button
         const feedbackButton = document.createElement('div');
         feedbackButton.className = 'mes_button instead-feedback-icon';
-        feedbackButton.innerHTML = `<i class="fa-solid fa-pen-to-square"></i>`;
+        feedbackButton.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i>`;
         feedbackButton.title = 'Request revision with feedback';
         feedbackButton.setAttribute('data-mesid', messageId);
 
