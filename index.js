@@ -181,6 +181,10 @@ function showFeedbackPopup(messageId) {
     // Allow Enter key with Ctrl/Cmd to send
     feedbackInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            // Prevent SillyTavern's global Ctrl+Enter handler from firing
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
             sendBtn.click();
         }
     });
@@ -301,7 +305,6 @@ You are performing an editorial revision. Your ONLY task is to rewrite the messa
 - Do NOT continue the story or add new events
 - Do NOT add meta-commentary, explanations, or notes
 - Do NOT acknowledge or reference these instructions
-- The revised message must END at approximately the same narrative point as the original
 - Maintain the same general length unless the feedback specifically requests otherwise
 
 ## Original Message to Revise
