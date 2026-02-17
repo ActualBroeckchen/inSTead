@@ -7,6 +7,8 @@ A SillyTavern extension that adds editorial feedback capability to character mes
 - **Feedback Icon**: Adds a rotating arrows icon (🔄) to the extra message buttons menu (click the ⋯ button on any AI message)
 - **Interactive Popup**: Click the icon to open a mobile-friendly feedback dialog with the original message preview
 - **Non-Destructive Revisions**: Revisions are added as **swipes**, preserving the original message—swipe left to see it anytime
+- **Feedback Display**: Revised messages show a collapsible "Revision Feedback" section with your original feedback and a copy button
+- **Streaming Support**: Visual typing indicator when streaming is enabled in your preset
 - **Smart Revision**: The extension uses SillyTavern's generation system with your existing settings and context
 
 ## Installation
@@ -47,9 +49,29 @@ When you submit feedback, inSTead:
    - Your editorial feedback
    - A request to write a revised version
 3. Adds the generated revision as a new swipe on the message
-4. Automatically switches to display the revision
+4. Stores your feedback with the revision for later reference
+5. Automatically switches to display the revision
 
 The extension leverages your existing SillyTavern configuration—character card, chat context, and generation settings are all used automatically.
+
+### About Quiet Generation Mode
+
+inSTead uses SillyTavern's **Quiet generation** mode for revisions. This is important because it allows you to control what context is included when generating revisions.
+
+In your **preset** and **lorebooks**, you can use the `{{isQuiet}}` macro to conditionally exclude prompts that shouldn't affect revisions. For example:
+
+```
+{{#if not isQuiet}}
+[This instruction only applies to normal generations, not revisions]
+{{/if}}
+```
+
+This is useful when you have:
+- System prompts that don't make sense for revision tasks
+- Lorebook entries that might confuse the revision process
+- Jailbreaks or special instructions that should only apply to roleplay, not editing
+
+By leveraging Quiet mode, you can fine-tune which parts of your setup affect revisions without changing your normal generation behavior.
 
 ## Tips
 
