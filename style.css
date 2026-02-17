@@ -7,10 +7,34 @@
     cursor: pointer;
     opacity: 0.7;
     transition: opacity 0.2s ease;
+    flex-shrink: 0;
+    min-width: 24px;
+    position: relative;
+    z-index: 1;
 }
 
 .instead-feedback-icon:hover {
     opacity: 1;
+}
+
+/* Ensure button visibility on mobile when other extensions crowd the menu */
+@media screen and (max-width: 768px) {
+    .mes .extraMesButtons .instead-feedback-icon,
+    .mes .mes_buttons .instead-feedback-icon {
+        order: -1; /* Move to the beginning of the flex container */
+        flex-shrink: 0;
+        min-width: 32px;
+        min-height: 32px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* If the buttons container overflows, ensure our button is still accessible */
+    .mes .extraMesButtons,
+    .mes .mes_buttons {
+        flex-wrap: wrap;
+    }
 }
 
 /* Popup overlay - uses dvh for dynamic viewport height (accounts for mobile browser chrome) */

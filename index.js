@@ -207,19 +207,40 @@ async function processRevisionRequest(messageId, feedback) {
         // Send the revision request using ST's generation system
         const result = await generateRevision(revisionPrompt);
 
-        if (result && result.trim()) {
-            const revisedText = result.trim();
-            
+        // Extract the revised text and thinking from the result
+        const revisedText = typeof result === 'object' ? (result.response || result).toString().trim() : (result || '').trim();
+        const thinkingContent = typeof result === 'object' ? result.thinking : null;
+        
+        if (revisedText) {
             // Initialize swipes array if it doesn't exist
             if (!Array.isArray(message.swipes)) {
+                // First swipe should be the current message content
                 message.swipes = [message.mes];
-                message.swipe_info = [{}];
+                message.swipe_info = [message.extra ? { extra: { ...message.extra } } : {}];
                 message.swipe_id = 0;
             }
             
-            // Ensure swipe_info array exists
+            // Ensure swipe_info array exists and matches swipes length
             if (!Array.isArray(message.swipe_info)) {
                 message.swipe_info = message.swipes.map(() => ({}));
+            }
+            
+            // Pad swipe_info to match swipes array if needed
+            while (message.swipe_info.length < message.swipes.length) {
+                message.swipe_info.push({});
+            }
+            
+            // Build the extra data for the new swipe
+            const newSwipeExtra = {
+                api: 'inSTead',
+                model: 'revision',
+                instead_revised: true,
+                instead_feedback: feedback,
+            };
+            
+            // Include thinking content if available
+            if (thinkingContent) {
+                newSwipeExtra.reasoning = thinkingContent;
             }
             
             // Add the revision as a new swipe
@@ -228,12 +249,7 @@ async function processRevisionRequest(messageId, feedback) {
                 send_date: new Date().toISOString(),
                 gen_started: new Date().toISOString(),
                 gen_finished: new Date().toISOString(),
-                extra: {
-                    api: 'inSTead',
-                    model: 'revision',
-                    instead_revised: true,
-                    instead_feedback: feedback,
-                },
+                extra: newSwipeExtra,
             });
             
             // Switch to the new swipe
@@ -241,12 +257,17 @@ async function processRevisionRequest(messageId, feedback) {
             message.swipe_id = newSwipeId;
             message.mes = revisedText;
             
-            // Update extra to mark as revised
+            // Update extra to mark as revised and include thinking
             if (!message.extra) {
                 message.extra = {};
             }
             message.extra.instead_revised = true;
             message.extra.instead_feedback = feedback;
+            
+            // Include thinking content in message extra for display
+            if (thinkingContent) {
+                message.extra.reasoning = thinkingContent;
+            }
 
             // Save and re-render
             await saveChatConditional();
