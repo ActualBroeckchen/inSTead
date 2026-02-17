@@ -1,5 +1,7 @@
 # inSTead
 
+![inSTead Logo](inSTeadLogo.png)
+
 A SillyTavern extension that adds editorial feedback capability to character messages. Get better responses by providing specific feedback and requesting revisions—without losing the original!
 
 ## Features
