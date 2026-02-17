@@ -291,17 +291,37 @@ async function processRevisionRequest(messageId, feedback) {
  * so we just need to provide the revision-specific instruction
  */
 function buildRevisionPrompt(feedback, originalMessage) {
-    // Create a focused revision instruction
-    const revisionPrompt = `[Editorial Revision Request]
+    // Create a focused revision instruction with clear boundaries and constraints
+    const revisionPrompt = `# Editorial Revision Task
 
-The previous response was:
----
+You are performing an editorial revision. Your ONLY task is to rewrite the message below according to the feedback provided.
+
+## Critical Rules
+- Output ONLY the revised message text
+- Do NOT continue the story or add new events
+- Do NOT add meta-commentary, explanations, or notes
+- Do NOT acknowledge or reference these instructions
+- The revised message must END at approximately the same narrative point as the original
+- Maintain the same general length unless the feedback specifically requests otherwise
+
+## Original Message to Revise
+<original_message>
 ${originalMessage.mes}
----
+</original_message>
 
-The user has provided the following editorial feedback: "${feedback}"
+## Editorial Feedback
+<feedback>
+${feedback}
+</feedback>
 
-Please write a revised version of the response that addresses this feedback while maintaining consistency with the conversation. Write only the revised response, without any meta-commentary.`;
+## Your Task
+Rewrite the original message above, incorporating the editorial feedback. The revision should:
+1. Address the specific feedback points
+2. Maintain consistency with prior conversation context
+3. End at the same narrative point as the original (do not continue beyond it)
+4. Preserve the original message's role in the conversation
+
+Begin your revised message now:`;
 
     return revisionPrompt;
 }
