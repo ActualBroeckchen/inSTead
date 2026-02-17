@@ -379,6 +379,51 @@ jQuery(async () => {
             setTimeout(addFeedbackIconsToMessages, 100);
         });
         
+        // Listen for app ready event (fires on initial load and profile switches)
+        eventSource.on(event_types.APP_READY, () => {
+            console.debug(`[${EXTENSION_NAME}] APP_READY event`);
+            setTimeout(addFeedbackIconsToMessages, 100);
+        });
+        
+        // Listen for settings loaded (fires when switching profiles/accounts)
+        eventSource.on(event_types.SETTINGS_LOADED, () => {
+            console.debug(`[${EXTENSION_NAME}] SETTINGS_LOADED event`);
+            loadSettings();
+            setTimeout(addFeedbackIconsToMessages, 200);
+        });
+        
+        // Use MutationObserver as a fallback to detect when messages are added to the DOM
+        // This handles cases where events might not fire properly during profile switches
+        const chatContainer = document.getElementById('chat');
+        if (chatContainer) {
+            const observer = new MutationObserver((mutations) => {
+                let hasNewMessages = false;
+                for (const mutation of mutations) {
+                    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                        for (const node of mutation.addedNodes) {
+                            if (node.nodeType === Node.ELEMENT_NODE && 
+                                (node.classList?.contains('mes') || node.querySelector?.('.mes'))) {
+                                hasNewMessages = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hasNewMessages) break;
+                }
+                if (hasNewMessages) {
+                    // Debounce to avoid excessive calls
+                    clearTimeout(observer.debounceTimer);
+                    observer.debounceTimer = setTimeout(() => {
+                        console.debug(`[${EXTENSION_NAME}] MutationObserver detected new messages`);
+                        addFeedbackIconsToMessages();
+                    }, 150);
+                }
+            });
+            
+            observer.observe(chatContainer, { childList: true, subtree: true });
+            console.debug(`[${EXTENSION_NAME}] MutationObserver attached to chat container`);
+        }
+        
         console.log(`[${EXTENSION_NAME}] Initialized successfully`);
     } catch (error) {
         console.error(`[${EXTENSION_NAME}] Failed to initialize:`, error);
