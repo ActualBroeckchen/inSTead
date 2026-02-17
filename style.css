@@ -37,6 +37,154 @@
     }
 }
 
+/* Typing indicator for streaming */
+.typing_indicator {
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+}
+
+.typing_indicator span {
+    animation: typingBlink 1.4s infinite both;
+    font-size: 1.5em;
+    line-height: 1;
+}
+
+.typing_indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing_indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typingBlink {
+    0%, 80%, 100% {
+        opacity: 0.3;
+    }
+    40% {
+        opacity: 1;
+    }
+}
+
+/* Feedback display on revised messages */
+.instead-feedback-display {
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background-color: rgba(74, 158, 255, 0.1);
+    border: 1px solid var(--SmartThemeQuoteColor, #4a9eff);
+    overflow: hidden;
+}
+
+.instead-feedback-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+    color: var(--SmartThemeQuoteColor, #4a9eff);
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.instead-feedback-header:hover {
+    background-color: rgba(74, 158, 255, 0.15);
+}
+
+.instead-feedback-header i:first-child {
+    font-size: 1em;
+}
+
+.instead-feedback-chevron {
+    margin-left: auto;
+    transition: transform 0.2s ease;
+    font-size: 0.8em;
+}
+
+.instead-feedback-chevron.rotated {
+    transform: rotate(180deg);
+}
+
+.instead-feedback-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0 12px;
+}
+
+.instead-feedback-content.expanded {
+    max-height: 500px;
+    padding: 0 12px 12px 12px;
+}
+
+.instead-feedback-text {
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    color: var(--SmartThemeBodyColor, #e0e0e0);
+    font-size: 0.9em;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-bottom: 8px;
+}
+
+.instead-feedback-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    font-size: 0.85em;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: rgba(74, 158, 255, 0.2);
+    border: 1px solid var(--SmartThemeQuoteColor, #4a9eff);
+    color: var(--SmartThemeQuoteColor, #4a9eff);
+    transition: all 0.2s ease;
+}
+
+.instead-feedback-copy:hover {
+    background-color: rgba(74, 158, 255, 0.3);
+}
+
+.instead-feedback-copy i {
+    font-size: 0.9em;
+}
+
+/* Light theme adjustments for feedback display */
+body.theme-light .instead-feedback-display {
+    background-color: rgba(74, 158, 255, 0.08);
+}
+
+body.theme-light .instead-feedback-text {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #333;
+}
+
+/* Mobile adjustments for feedback display */
+@media screen and (max-width: 768px) {
+    .instead-feedback-header {
+        padding: 6px 10px;
+        font-size: 0.85em;
+    }
+    
+    .instead-feedback-content.expanded {
+        padding: 0 10px 10px 10px;
+    }
+    
+    .instead-feedback-text {
+        padding: 8px;
+        font-size: 0.85em;
+    }
+    
+    .instead-feedback-copy {
+        padding: 8px 14px;
+        min-height: 36px;
+    }
+}
+
 /* Popup overlay - uses dvh for dynamic viewport height (accounts for mobile browser chrome) */
 .instead-popup-overlay {
     position: fixed;
