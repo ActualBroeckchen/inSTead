@@ -10,7 +10,7 @@ A SillyTavern extension that adds editorial feedback capability to character mes
 - **Interactive Popup**: Click the icon to open a mobile-friendly feedback dialog with the original message preview
 - **Non-Destructive Revisions**: Revisions are added as **swipes**, preserving the original message—swipe left to see it anytime
 - **Feedback Display**: Revised messages show a collapsible "Revision Feedback" section with your original feedback and a copy button
-- **Streaming Support**: Visual typing indicator when streaming is enabled in your preset
+- **Typing Indicator Support**: Visual typing indicator when streaming is enabled in your preset
 - **Smart Revision**: The extension uses SillyTavern's generation system with your existing settings and context
 
 ## Installation
@@ -77,6 +77,10 @@ This is useful when you have:
 - Jailbreaks or special instructions that should only apply to roleplay, not editing
 
 By leveraging Quiet mode, you can fine-tune which parts of your setup affect revisions without changing your normal generation behavior.
+
+### Limitations
+
+Quiet mode does not currently support streaming or thinking output. The model does go through the reasoning step if it is supposed to, but the results are discarded. These were requested features, but can't be implemented this way. Instead, the thinking for the original message will be included.
 
 ## Tips
 
