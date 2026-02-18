@@ -658,10 +658,8 @@ Begin your revised message now:`;
  */
 async function generateRevision(revisionPrompt) {
     // Use SillyTavern's generateQuietPrompt which properly integrates with all backends
-    const result = await generateQuietPrompt({
-        quietPrompt: revisionPrompt,
-        quietToLoud: false,  // Don't add to chat
-    });
+    // Function signature: generateQuietPrompt(quietPrompt, quietToLoud, skipWIAN, quietImage, quietName)
+    const result = await generateQuietPrompt(revisionPrompt, false);
     
     return result || '';
 }
